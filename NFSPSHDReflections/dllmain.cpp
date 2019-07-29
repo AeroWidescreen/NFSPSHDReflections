@@ -6,12 +6,10 @@
 #include "..\includes\IniReader.h"
 #include <d3d9.h>
 
-DWORD WINAPI Thing(LPVOID);
-
 bool HDReflections, ImproveReflectionLOD, RealFrontEndReflections;
 static int ResolutionX, ResolutionY;
+int ResX, ResY;
 static float Scale;
-HWND windowHandle;
 
 void Init()
 {
@@ -19,8 +17,8 @@ void Init()
 	CIniReader iniReader("NFSPSHDReflections.ini");
 
 	// Resolution
-	ResolutionX = iniReader.ReadInteger("RESOLUTION", "ResolutionX", 1920);
-	ResolutionY = iniReader.ReadInteger("RESOLUTION", "ResolutionY", 1080);
+	ResX = iniReader.ReadInteger("RESOLUTION", "ResolutionX", 0);
+	ResY = iniReader.ReadInteger("RESOLUTION", "ResolutionY", 0);
 	Scale = iniReader.ReadFloat("RESOLUTION", "Scale", 1.0);
 
 	// General
@@ -28,13 +26,19 @@ void Init()
 	ImproveReflectionLOD = iniReader.ReadInteger("GENERAL", "ImproveReflectionLOD", 1);
 	RealFrontEndReflections = iniReader.ReadInteger("GENERAL", "RealFrontEndReflections", 0);
 
+	if (ResX <= 0 || ResY <= 0)
+	{
+		ResX = ::GetSystemMetrics(SM_CXSCREEN);
+		ResY = ::GetSystemMetrics(SM_CYSCREEN);
+	}
+
 	if (HDReflections)
 	{
 		// Vehicle Reflection
-		injector::WriteMemory<uint32_t>(0x4BD062, ResolutionY * Scale, true);
-		injector::WriteMemory<uint32_t>(0x4BD24D, ResolutionY * Scale, true);
-		injector::WriteMemory<uint32_t>(0x4BD283, ResolutionY * Scale, true);
-		injector::WriteMemory<uint32_t>(0x4BD288, ResolutionY * Scale, true);
+		injector::WriteMemory<uint32_t>(0x4BD062, ResY * Scale, true);
+		injector::WriteMemory<uint32_t>(0x4BD24D, ResY * Scale, true);
+		injector::WriteMemory<uint32_t>(0x4BD283, ResY * Scale, true);
+		injector::WriteMemory<uint32_t>(0x4BD288, ResY * Scale, true);
 	}
 
 	if (ImproveReflectionLOD)
