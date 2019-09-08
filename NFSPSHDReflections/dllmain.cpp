@@ -55,6 +55,8 @@ void Init()
 		injector::MakeNOP(0x4B8D1B, 2, true);
 		injector::MakeNOP(0x4B8B8B, 2, true);
 		injector::MakeNOP(0x4B8C66, 2, true);
+		// Corrects shader brightness
+		injector::WriteMemory<uint8_t>(0x701606, 0xEB, true);
 	}
 }
 	
