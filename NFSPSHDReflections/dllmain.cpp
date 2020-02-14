@@ -6,10 +6,29 @@
 #include "..\includes\IniReader.h"
 #include <d3d9.h>
 
-bool HDReflections, ImproveReflectionLOD, RealFrontEndReflections;
-static int ResolutionX, ResolutionY;
+bool HDReflections, ImproveReflectionLOD, RealFrontEndReflections, BrightnessFix;
+int ResolutionX, ResolutionY;
 int ResX, ResY;
-static float Scale;
+float Scale;
+
+float BrightnessMultiplier = 2.0f;
+float BrightnessDivider = 100.0f;
+DWORD BrightnessResult;
+DWORD BrightnessFixCodeCaveExit = 0x4B3E91;
+
+void __declspec(naked) BrightnessFixCodeCave()
+{
+	__asm {
+		fild dword ptr ds : [0xAC6F0C]				// Loads brightness integer
+		fmul dword ptr ds : [BrightnessMultiplier]	// Multiplies by 2
+		fstp dword ptr ds : [BrightnessResult]		// Stores result
+		fld dword ptr ds : [BrightnessDivider]		// Loads a value of 100
+		fdiv dword ptr ds : [BrightnessResult]		// Divides by result
+		fstp dword ptr ds : [0xAA9630]				// Stores new gamma float at 00AA9630
+		movss xmm0, dword ptr ds : [0xAA9630]
+		jmp BrightnessFixCodeCaveExit
+	}
+}
 
 void Init()
 {
@@ -25,6 +44,9 @@ void Init()
 	HDReflections = iniReader.ReadInteger("GENERAL", "HDReflections", 1);
 	ImproveReflectionLOD = iniReader.ReadInteger("GENERAL", "ImproveReflectionLOD", 1);
 	RealFrontEndReflections = iniReader.ReadInteger("GENERAL", "RealFrontEndReflections", 0);
+
+	// Extra
+	BrightnessFix = iniReader.ReadInteger("EXTRA", "BrightnessFix", 1);
 
 	if (ResX <= 0 || ResY <= 0)
 	{
@@ -55,12 +77,19 @@ void Init()
 		injector::MakeNOP(0x4B8D1B, 2, true);
 		injector::MakeNOP(0x4B8B8B, 2, true);
 		injector::MakeNOP(0x4B8C66, 2, true);
-		// Corrects shader brightness
-		injector::WriteMemory<uint8_t>(0x701606, 0xEB, true);
+		//injector::WriteMemory<uint8_t>(0x701606, 0xEB, true);
+	}
+
+	if (BrightnessFix)
+	{
+		// Sets default brightness to 50%
+		injector::WriteMemory<float>(0xAA9630, 1.0f, true);
+		// Custom brightness code
+		injector::MakeJMP(0x4B3E89, BrightnessFixCodeCave, true);
+		injector::MakeNOP(0x4B3E8E, 1, true);
 	}
 }
 	
-
 BOOL APIENTRY DllMain(HMODULE /*hModule*/, DWORD reason, LPVOID /*lpReserved*/)
 {
 	if (reason == DLL_PROCESS_ATTACH)
@@ -79,5 +108,4 @@ BOOL APIENTRY DllMain(HMODULE /*hModule*/, DWORD reason, LPVOID /*lpReserved*/)
 		}
 	}
 	return TRUE;
-
 }
