@@ -10,6 +10,7 @@ bool HDReflections, ImproveReflectionLOD, RealFrontEndReflections, BrightnessFix
 int ResolutionX, ResolutionY;
 int ResX, ResY;
 float Scale;
+double VehicleReflectionBrightness;
 
 float BrightnessMultiplier = 2.0f;
 float BrightnessDivider = 100.0f;
@@ -19,12 +20,12 @@ DWORD BrightnessFixCodeCaveExit = 0x4B3E91;
 void __declspec(naked) BrightnessFixCodeCave()
 {
 	__asm {
-		fild dword ptr ds : [0xAC6F0C]				// Loads brightness integer
-		fmul dword ptr ds : [BrightnessMultiplier]	// Multiplies by 2
+		fild dword ptr ds : [0xAC6F0C]              // Loads brightness integer
+		fmul dword ptr ds : [BrightnessMultiplier]  // Multiplies by 2
 		fstp dword ptr ds : [BrightnessResult]		// Stores result
 		fld dword ptr ds : [BrightnessDivider]		// Loads a value of 100
 		fdiv dword ptr ds : [BrightnessResult]		// Divides by result
-		fstp dword ptr ds : [0xAA9630]				// Stores new gamma float at 00AA9630
+		fstp dword ptr ds : [0xAA9630]              // Stores new gamma float at 00AA9630
 		movss xmm0, dword ptr ds : [0xAA9630]
 		jmp BrightnessFixCodeCaveExit
 	}
@@ -44,6 +45,7 @@ void Init()
 	HDReflections = iniReader.ReadInteger("GENERAL", "HDReflections", 1);
 	ImproveReflectionLOD = iniReader.ReadInteger("GENERAL", "ImproveReflectionLOD", 1);
 	RealFrontEndReflections = iniReader.ReadInteger("GENERAL", "RealFrontEndReflections", 0);
+	VehicleReflectionBrightness = iniReader.ReadFloat("GENERAL", "VehicleReflectionBrightness", 1.0);
 
 	// Extra
 	BrightnessFix = iniReader.ReadInteger("EXTRA", "BrightnessFix", 1);
@@ -78,6 +80,12 @@ void Init()
 		injector::MakeNOP(0x4B8B8B, 2, true);
 		injector::MakeNOP(0x4B8C66, 2, true);
 		//injector::WriteMemory<uint8_t>(0x701606, 0xEB, true);
+	}
+
+	if (VehicleReflectionBrightness)
+	{
+		static double VehicleReflectionIntensity = (0.5f * VehicleReflectionBrightness);
+		injector::WriteMemory(0x4B7AB3, &VehicleReflectionIntensity, true);
 	}
 
 	if (BrightnessFix)
