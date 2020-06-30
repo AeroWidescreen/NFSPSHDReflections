@@ -6,7 +6,7 @@
 #include "..\includes\IniReader.h"
 #include <d3d9.h>
 
-bool HDReflections, ImproveReflectionLOD, ImproveReflectionSkybox, RealFrontEndReflections, GammaFix;
+bool HDReflections, ImproveReflectionLOD, ImproveReflectionSkybox, RealFrontEndReflections, GammaFix, RealisticChrome;
 int ResolutionX, ResolutionY;
 int ResX, ResY;
 float Scale;
@@ -27,6 +27,8 @@ DWORD VehicleSkyboxQualityCodeCaveExit1 = 0x77710A;
 DWORD VehicleSkyboxQualityCodeCaveExit2 = 0x7771E0;
 
 DWORD VehicleReflectionLODCodeCaveExit = 0x7448A3;
+
+DWORD RealisticChromeCodeCaveExit = 0x4B7939;
 
 void __declspec(naked) BrightnessFixCodeCave()
 {
@@ -111,6 +113,20 @@ void __declspec(naked) VehicleReflectionLODCodeCave()
 	}
 }
 
+void __declspec(naked) RealisticChromeCodeCave()
+{
+	__asm {
+		mov esi, dword ptr ds : [0xA9E578]
+		mov dword ptr ds : [esi + 0x2E9C], 0x3F800000 // chrome materiel reflectivity (1.0)
+		mov dword ptr ds : [esi + 0x2E8C], 0x3F800000 // chrome materiel reflectivity (1.0)
+		mov dword ptr ds : [esi + 0x2E10], 0x3E800000 // chrome materiel brightness (0.25)
+		mov dword ptr ds : [esi + 0x2E00], 0x00000000 // chrome materiel brightness (0.0)
+		mov esi, dword ptr ds : [ecx + 0x08]
+		fld dword ptr ds : [esi + 0x64]
+		jmp RealisticChromeCodeCaveExit
+	}
+}
+
 void Init()
 {
 	// Read values from .ini
@@ -130,6 +146,7 @@ void Init()
 
 	// Extra
 	GammaFix = iniReader.ReadInteger("EXTRA", "GammaFix", 1);
+	RealisticChrome = iniReader.ReadInteger("EXTRA", "RealisticChrome", 0);
 
 	if (ResX <= 0 || ResY <= 0)
 	{
@@ -190,6 +207,13 @@ void Init()
 		// Custom brightness code
 		injector::MakeJMP(0x4B3E89, BrightnessFixCodeCave, true);
 		injector::MakeNOP(0x4B3E8E, 1, true);
+	}
+
+	if (RealisticChrome)
+	{
+		// Chrome materiel
+		injector::MakeJMP(0x4B7933, RealisticChromeCodeCave, true);
+		injector::MakeNOP(0x4B7938, 1, true);
 	}
 }
 	
