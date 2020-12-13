@@ -175,11 +175,11 @@ void Init()
 	ImproveReflectionSkybox = iniReader.ReadInteger("GENERAL", "ImproveReflectionSkybox", 1);
 	ExtendRenderDistance = iniReader.ReadInteger("GENERAL", "ExtendRenderDistance", 0);
 	RealFrontEndReflections = iniReader.ReadInteger("GENERAL", "RealFrontEndReflections", 0);
+	RealisticChrome = iniReader.ReadInteger("GENERAL", "RealisticChrome", 0);
 	VehicleReflectionBrightness = iniReader.ReadFloat("GENERAL", "VehicleReflectionBrightness", 1.0f);
 
 	// Extra
 	GammaFix = iniReader.ReadInteger("EXTRA", "GammaFix", 1);
-	RealisticChrome = iniReader.ReadInteger("EXTRA", "RealisticChrome", 0);
 
 	if (HDReflections)
 	{

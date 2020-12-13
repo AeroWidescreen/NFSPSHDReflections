@@ -13,12 +13,12 @@
 - ImproveReflectionLOD : Increases the level of detail used in reflections.  
 - ImproveReflectionSkybox : Increases the quality of the skybox.
 - ExtendRenderDistance : Increases the render distance of vehicle reflections.  
-- RealFrontEndReflections : Enables real-time vehicle reflections in the front end.  
+- RealFrontEndReflections : Enables real-time vehicle reflections in the front end. 
+- RealisticChrome : Makes the chrome materiel more reflective.  
 - VehicleReflectionBrightness : Controls the intensity of vehicle reflections. 
 
 ## Extra Features  
 - GammaFix : Solves an issue that caused the wrong brightness value to be used on launch. 
-- RealisticChrome : Makes the chrome materiel more reflective. 
 
 ## Credits
 [Aero_](https://github.com/AeroWidescreen) : Creator of NFSPS HD Reflections.  
