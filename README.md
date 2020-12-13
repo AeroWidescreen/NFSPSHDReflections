@@ -7,12 +7,12 @@
 4. Move dinput8.dll to the game's install folder.  
 
 ## Features
-- ResolutionX : Controls the horizontal resolution of reflections.  
-- ResolutionY : Controls the vertical resolution of reflections.  
-- Scale : Scales the resolution of reflections.  
-- HDReflections : Reflection resolution will be increased based on the values set. 
+- HDReflections : Resolution will be increased based on desktop resolution.  
+- OldGPUCompatibility: Vehicle reflections will be rounded to the nearest power of two.  
+- Scale : Controls the resolution multiplier of reflections.  
 - ImproveReflectionLOD : Increases the level of detail used in reflections.  
 - ImproveReflectionSkybox : Increases the quality of the skybox.
+- ExtendRenderDistance : Increases the render distance of vehicle reflections.  
 - RealFrontEndReflections : Enables real-time vehicle reflections in the front end.  
 - VehicleReflectionBrightness : Controls the intensity of vehicle reflections. 
 

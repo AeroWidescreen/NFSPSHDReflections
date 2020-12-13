@@ -6,9 +6,9 @@
 #include "..\includes\IniReader.h"
 #include <d3d9.h>
 
-bool HDReflections, ImproveReflectionLOD, ImproveReflectionSkybox, RealFrontEndReflections, GammaFix, RealisticChrome;
-int ResolutionX, ResolutionY;
-int ResX, ResY;
+bool HDReflections, OldGPUCompatibility, ImproveReflectionLOD, ExtendRenderDistance, RealFrontEndReflections, GammaFix, RealisticChrome;
+int ImproveReflectionSkybox;
+int VehicleRes = 256;
 float Scale;
 double VehicleReflectionBrightness;
 
@@ -16,19 +16,16 @@ float BrightnessMultiplier = 2.0f;
 float BrightnessDivider = 100.0f;
 DWORD BrightnessResult;
 DWORD BrightnessFixCodeCaveExit = 0x4B3E91;
-
 float FE_VehicleSkyboxBrightness = 0.75f;
 DWORD VehicleSkyboxBrightnessCodeCaveExit = 0x4B209D;
-
 float FE_VehicleWorldBrightness = 0.5f;
 DWORD VehicleWorldBrightnessCodeCaveExit = 0x4CA487;
-
+DWORD VehicleHorizonQualityCodeCaveExit = 0x754706;
 DWORD VehicleSkyboxQualityCodeCaveExit1 = 0x77710A;
 DWORD VehicleSkyboxQualityCodeCaveExit2 = 0x7771E0;
-
 DWORD VehicleReflectionLODCodeCaveExit = 0x7448A3;
-
 DWORD RealisticChromeCodeCaveExit = 0x4B7939;
+DWORD ExtendRenderDistanceCodeCaveExit = 0x4BDEA8;
 
 void __declspec(naked) BrightnessFixCodeCave()
 {
@@ -70,9 +67,34 @@ void __declspec(naked) VehicleWorldBrightnessCodeCave()
 	}
 }
 
-void __declspec(naked) VehicleSkyboxQualityCodeCave()
+void __declspec(naked) VehicleHorizonQualityCodeCave()
 {
 	__asm {
+		sub esp, 0x84
+		push eax
+		push ebx
+		cmp dword ptr ds : [0xA83BCC] , 0x00
+		je VehicleHorizonQualityCodeCave_None // jumps if Skybox Pointer is null
+		mov eax, dword ptr ds : [0xA83BCC]
+		mov eax, dword ptr ds : [eax + 0x2C]
+		mov eax, dword ptr ds : [eax + 0x08] // Writes "XX_PAN_360_01_D" Hash to EAX
+		cmp dword ptr ds : [0xA83BE4], 0x00
+		je VehicleHorizonQualityCodeCave_None // jumps if ENVMAP Skybox Pointer is null
+		mov ebx, dword ptr ds : [0xA83BE4]
+		mov ebx, dword ptr ds : [ebx + 0x2C]
+		mov dword ptr ds : [ebx + 0x08], eax // Overwrites "XX_PAN_CAR360_01_D" Hash
+
+	VehicleHorizonQualityCodeCave_None:
+		pop ebx
+		pop eax
+		jmp VehicleHorizonQualityCodeCaveExit
+	}
+}
+
+void __declspec(naked) VehicleSkyboxQualityCodeCave()
+{
+	__asm 
+	{
 		cmp dword ptr ds : [0xABB510], 0x06 // checks if FrontEnd (0x03) or InGame (0x06)
 		je VehicleSkyboxQualityCodeCaveInGame
 		cmp ebx, 0x12
@@ -88,7 +110,8 @@ void __declspec(naked) VehicleSkyboxQualityCodeCave()
 
 void __declspec(naked) VehicleReflectionLODCodeCave()
 {
-	__asm {
+	__asm 
+	{
 		cmp dword ptr ds : [0xABB510], 0x06 // checks if FrontEnd (0x03) or InGame (0x06)
 		je VehicleReflectionLODCodeCaveInGame
 		jmp VehicleReflectionLODCodeCaveFrontEnd
@@ -115,7 +138,8 @@ void __declspec(naked) VehicleReflectionLODCodeCave()
 
 void __declspec(naked) RealisticChromeCodeCave()
 {
-	__asm {
+	__asm 
+	{
 		mov esi, dword ptr ds : [0xA9E578]
 		mov dword ptr ds : [esi + 0x2E9C], 0x3F800000 // chrome materiel reflectivity (1.0)
 		mov dword ptr ds : [esi + 0x2E8C], 0x3F800000 // chrome materiel reflectivity (1.0)
@@ -127,40 +151,65 @@ void __declspec(naked) RealisticChromeCodeCave()
 	}
 }
 
+void __declspec(naked) ExtendRenderDistanceCodeCave()
+{
+	__asm 
+	{
+		mov dword ptr ds : [esi + 0x164], 0x461C4000 // 10000.0f
+		jmp ExtendRenderDistanceCodeCaveExit
+	}
+}
+
 void Init()
 {
 	// Read values from .ini
 	CIniReader iniReader("NFSPSHDReflections.ini");
 
 	// Resolution
-	ResX = iniReader.ReadInteger("RESOLUTION", "ResolutionX", 0);
-	ResY = iniReader.ReadInteger("RESOLUTION", "ResolutionY", 0);
-	Scale = iniReader.ReadFloat("RESOLUTION", "Scale", 1.0);
+	HDReflections = iniReader.ReadInteger("RESOLUTION", "HDReflections", 1);
+	OldGPUCompatibility = iniReader.ReadInteger("RESOLUTION", "OldGPUCompatibility", 0);
+	Scale = iniReader.ReadFloat("RESOLUTION", "Scale", 1.0f);
 
 	// General
-	HDReflections = iniReader.ReadInteger("GENERAL", "HDReflections", 1);
 	ImproveReflectionLOD = iniReader.ReadInteger("GENERAL", "ImproveReflectionLOD", 1);
-	ImproveReflectionSkybox = iniReader.ReadInteger("GENERAL", "ImproveReflectionSkybox", 0);
+	ImproveReflectionSkybox = iniReader.ReadInteger("GENERAL", "ImproveReflectionSkybox", 1);
+	ExtendRenderDistance = iniReader.ReadInteger("GENERAL", "ExtendRenderDistance", 0);
 	RealFrontEndReflections = iniReader.ReadInteger("GENERAL", "RealFrontEndReflections", 0);
-	VehicleReflectionBrightness = iniReader.ReadFloat("GENERAL", "VehicleReflectionBrightness", 1.0);
+	VehicleReflectionBrightness = iniReader.ReadFloat("GENERAL", "VehicleReflectionBrightness", 1.0f);
 
 	// Extra
 	GammaFix = iniReader.ReadInteger("EXTRA", "GammaFix", 1);
 	RealisticChrome = iniReader.ReadInteger("EXTRA", "RealisticChrome", 0);
 
-	if (ResX <= 0 || ResY <= 0)
-	{
-		ResX = ::GetSystemMetrics(SM_CXSCREEN);
-		ResY = ::GetSystemMetrics(SM_CYSCREEN);
-	}
-
 	if (HDReflections)
 	{
+		VehicleRes = ::GetSystemMetrics(SM_CYSCREEN);
+	}
+
+	// Writes Resolution Values
+	{
 		// Vehicle Reflection
-		injector::WriteMemory<uint32_t>(0x4BD062, ResY * Scale, true);
-		injector::WriteMemory<uint32_t>(0x4BD24D, ResY * Scale, true);
-		injector::WriteMemory<uint32_t>(0x4BD283, ResY * Scale, true);
-		injector::WriteMemory<uint32_t>(0x4BD288, ResY * Scale, true);
+		injector::WriteMemory<uint32_t>(0x4BD062, VehicleRes * Scale, true);
+		injector::WriteMemory<uint32_t>(0x4BD24D, VehicleRes * Scale, true);
+		injector::WriteMemory<uint32_t>(0x4BD283, VehicleRes * Scale, true);
+		injector::WriteMemory<uint32_t>(0x4BD288, VehicleRes * Scale, true);
+
+		if (OldGPUCompatibility)
+		{
+			// Rounds vehicle resolution down to the nearest power of two
+			static int VehicleRes_POT = (VehicleRes * Scale);
+			VehicleRes_POT--;
+			VehicleRes_POT |= VehicleRes_POT >> 1;
+			VehicleRes_POT |= VehicleRes_POT >> 2;
+			VehicleRes_POT |= VehicleRes_POT >> 4;
+			VehicleRes_POT |= VehicleRes_POT >> 8;
+			VehicleRes_POT |= VehicleRes_POT >> 16;
+			VehicleRes_POT++;
+			injector::WriteMemory<uint32_t>(0x4BD062, VehicleRes_POT / 2, true);
+			injector::WriteMemory<uint32_t>(0x4BD24D, VehicleRes_POT / 2, true);
+			injector::WriteMemory<uint32_t>(0x4BD283, VehicleRes_POT / 2, true);
+			injector::WriteMemory<uint32_t>(0x4BD288, VehicleRes_POT / 2, true);
+		}
 	}
 
 	if (ImproveReflectionLOD)
@@ -172,9 +221,23 @@ void Init()
 
 	if (ImproveReflectionSkybox)
 	{
-		// Vehicle Reflection Skybox Quality
-		injector::MakeJMP(0x777104, VehicleSkyboxQualityCodeCave, true);
-		injector::MakeNOP(0x777109, 1, true);
+		// Vehicle Reflection Horizon Quality
+		injector::MakeJMP(0x754700, VehicleHorizonQualityCodeCave, true);
+		injector::MakeNOP(0x754705, 1, true);
+
+		if (ImproveReflectionSkybox >= 2)
+		{
+			// Vehicle Reflection Skybox Quality
+			injector::MakeJMP(0x777104, VehicleSkyboxQualityCodeCave, true);
+			injector::MakeNOP(0x777109, 1, true);
+		}
+	}
+
+	if (ExtendRenderDistance)
+	{
+		// Vehicle Reflection Render Distance
+		injector::MakeJMP(0x4BDEA0, ExtendRenderDistanceCodeCave, true);
+		injector::MakeNOP(0x4BDEA5, 3, true);
 	}
 
 	if (RealFrontEndReflections)

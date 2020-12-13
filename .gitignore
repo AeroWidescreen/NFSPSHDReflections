@@ -28,3 +28,10 @@ NFSPSHDReflections/Release/vc142.pdb
 NFSPSHDReflections/.vs/NFSPSHDReflections/v16/Browse.VC.db-shm
 NFSPSHDReflections/.vs/NFSPSHDReflections/v16/Browse.VC.db-wal
 NFSPSHDReflections/.vs/NFSPSHDReflections/v16/ipch/AutoPCH/b94a179af35cc351/DLLMAIN.ipch
+NFSPSHDReflections/Release/CodeAnalysisResultManifest.txt
+*.sarif
+*.xml
+*.recipe
+*.log
+*.pchast
+NFSPSHDReflections/Release/NFSPSHDReflections.vcxproj.FileListAbsolute.txt
