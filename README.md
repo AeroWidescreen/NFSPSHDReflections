@@ -16,8 +16,6 @@
 - RealFrontEndReflections : Enables real-time vehicle reflections in the front end. 
 - RealisticChrome : Makes the chrome materiel more reflective.  
 - VehicleReflectionBrightness : Controls the intensity of vehicle reflections. 
-
-## Extra Features  
 - GammaFix : Solves an issue that caused the wrong brightness value to be used on launch. 
 
 ## Credits

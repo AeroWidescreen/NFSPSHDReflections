@@ -6,7 +6,7 @@
 #include "..\includes\IniReader.h"
 #include <d3d9.h>
 
-bool HDReflections, OldGPUCompatibility, ImproveReflectionLOD, ExtendRenderDistance, RealFrontEndReflections, GammaFix, RealisticChrome;
+bool HDReflections, OldGPUCompatibility, ImproveReflectionLOD, ExtendRenderDistance, RealFrontEndReflections, RealisticChrome, GammaFix;
 int ImproveReflectionSkybox;
 int VehicleRes = 256;
 float Scale;
