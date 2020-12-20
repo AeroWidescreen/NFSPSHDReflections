@@ -11,7 +11,9 @@
 - OldGPUCompatibility: Vehicle reflections will be rounded to the nearest power of two.  
 - Scale : Controls the resolution multiplier of reflections.  
 - ImproveReflectionLOD : Increases the level of detail used in reflections.  
-- ImproveReflectionSkybox : Increases the quality of the skybox.
+- ImproveReflectionSkybox : Increases the quality of the skybox.  
+- RestoreDetails : Restores shader effects, road markings, and dynamic shadows to reflections. 
+- MissingReflectionFix : Solves a bug that made the bottom chunk of the vehicle reflection disappear.  
 - ExtendRenderDistance : Increases the render distance of vehicle reflections.  
 - RealFrontEndReflections : Enables real-time vehicle reflections in the front end. 
 - RealisticChrome : Makes the chrome materiel more reflective.  

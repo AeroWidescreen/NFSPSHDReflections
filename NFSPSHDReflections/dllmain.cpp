@@ -6,7 +6,7 @@
 #include "..\includes\IniReader.h"
 #include <d3d9.h>
 
-bool HDReflections, OldGPUCompatibility, ImproveReflectionLOD, ExtendRenderDistance, RealFrontEndReflections, RealisticChrome, GammaFix;
+bool HDReflections, OldGPUCompatibility, ImproveReflectionLOD, RestoreDetails, MissingReflectionFix, ExtendRenderDistance, RealFrontEndReflections, RealisticChrome, GammaFix;
 int ImproveReflectionSkybox;
 int VehicleRes = 256;
 float Scale;
@@ -72,20 +72,15 @@ void __declspec(naked) VehicleHorizonQualityCodeCave()
 	__asm {
 		sub esp, 0x84
 		push eax
-		push ebx
-		cmp dword ptr ds : [0xA83BCC] , 0x00
-		je VehicleHorizonQualityCodeCave_None // jumps if Skybox Pointer is null
-		mov eax, dword ptr ds : [0xA83BCC]
-		mov eax, dword ptr ds : [eax + 0x2C]
-		mov eax, dword ptr ds : [eax + 0x08] // Writes "XX_PAN_360_01_D" Hash to EAX
 		cmp dword ptr ds : [0xA83BE4], 0x00
 		je VehicleHorizonQualityCodeCave_None // jumps if ENVMAP Skybox Pointer is null
-		mov ebx, dword ptr ds : [0xA83BE4]
-		mov ebx, dword ptr ds : [ebx + 0x2C]
-		mov dword ptr ds : [ebx + 0x08], eax // Overwrites "XX_PAN_CAR360_01_D" Hash
+		cmp dword ptr ds : [0xABB510], 0x06
+		jne VehicleHorizonQualityCodeCave_None // jumps if not InGame (0x06)
+		mov eax, dword ptr ds : [0xA83BE4]
+		mov eax, dword ptr ds : [eax + 0x2C]
+		mov dword ptr ds : [eax + 0x08], 0x094C5BD3 // overwrites "XX_PAN_CAR360_01_D" hash
 
 	VehicleHorizonQualityCodeCave_None:
-		pop ebx
 		pop eax
 		jmp VehicleHorizonQualityCodeCaveExit
 	}
@@ -173,6 +168,8 @@ void Init()
 	// General
 	ImproveReflectionLOD = iniReader.ReadInteger("GENERAL", "ImproveReflectionLOD", 1);
 	ImproveReflectionSkybox = iniReader.ReadInteger("GENERAL", "ImproveReflectionSkybox", 1);
+	RestoreDetails = iniReader.ReadInteger("GENERAL", "RestoreDetails", 1);
+	MissingReflectionFix = iniReader.ReadInteger("GENERAL", "MissingReflectionFix", 1);
 	ExtendRenderDistance = iniReader.ReadInteger("GENERAL", "ExtendRenderDistance", 0);
 	RealFrontEndReflections = iniReader.ReadInteger("GENERAL", "RealFrontEndReflections", 0);
 	RealisticChrome = iniReader.ReadInteger("GENERAL", "RealisticChrome", 0);
@@ -231,6 +228,18 @@ void Init()
 			injector::MakeJMP(0x777104, VehicleSkyboxQualityCodeCave, true);
 			injector::MakeNOP(0x777109, 1, true);
 		}
+	}
+
+	if (RestoreDetails)
+	{
+		// Refelction Shaders, Shadows, and Markings.
+		injector::WriteMemory<uint32_t>(0x4CA478, 0x00000000, true);
+	}
+
+	if (MissingReflectionFix)
+	{
+		static float RenderValue = 0.5f;
+		injector::WriteMemory(0x4BDE3E, &RenderValue, true);
 	}
 
 	if (ExtendRenderDistance)
