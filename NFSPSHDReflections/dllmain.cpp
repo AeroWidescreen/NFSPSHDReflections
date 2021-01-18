@@ -20,7 +20,7 @@ float FE_VehicleSkyboxBrightness = 0.75f;
 DWORD VehicleSkyboxBrightnessCodeCaveExit = 0x4B209D;
 float FE_VehicleWorldBrightness = 0.5f;
 DWORD VehicleWorldBrightnessCodeCaveExit = 0x4CA487;
-DWORD VehicleHorizonQualityCodeCaveExit = 0x754706;
+DWORD VehicleHorizonQualityCodeCaveExit = 0x1A11345;
 DWORD VehicleSkyboxQualityCodeCaveExit1 = 0x77710A;
 DWORD VehicleSkyboxQualityCodeCaveExit2 = 0x7771E0;
 DWORD VehicleReflectionLODCodeCaveExit = 0x7448A3;
@@ -70,18 +70,19 @@ void __declspec(naked) VehicleWorldBrightnessCodeCave()
 void __declspec(naked) VehicleHorizonQualityCodeCave()
 {
 	__asm {
-		sub esp, 0x84
 		push eax
-		cmp dword ptr ds : [0xA83BE4], 0x00
-		je VehicleHorizonQualityCodeCave_None // jumps if ENVMAP Skybox Pointer is null
-		cmp dword ptr ds : [0xABB510], 0x06
-		jne VehicleHorizonQualityCodeCave_None // jumps if not InGame (0x06)
-		mov eax, dword ptr ds : [0xA83BE4]
-		mov eax, dword ptr ds : [eax + 0x2C]
-		mov dword ptr ds : [eax + 0x08], 0x094C5BD3 // overwrites "XX_PAN_CAR360_01_D" hash
-
-	VehicleHorizonQualityCodeCave_None:
+		lea eax, [esi + 0x50]
+		cmp dword ptr ds : [eax + 0x10], 0x33524143 // checks if "PAN_CAR360_01_D"
+		jne VehicleHorizonQualityCodeCaveNone
 		pop eax
+		mov dword ptr ds : [esi + 0x50], 0x00000000 // nulls texture pointer
+		mov cl, 0x01
+		jmp VehicleHorizonQualityCodeCaveExit
+
+	VehicleHorizonQualityCodeCaveNone:
+		pop eax
+		mov dword ptr ds : [esi + 0x50], eax  // writes texture pointer
+		mov cl, 0x01
 		jmp VehicleHorizonQualityCodeCaveExit
 	}
 }
@@ -219,8 +220,7 @@ void Init()
 	if (ImproveReflectionSkybox)
 	{
 		// Vehicle Reflection Horizon Quality
-		injector::MakeJMP(0x754700, VehicleHorizonQualityCodeCave, true);
-		injector::MakeNOP(0x754705, 1, true);
+		injector::MakeJMP(0x1A11340, VehicleHorizonQualityCodeCave, true);
 
 		if (ImproveReflectionSkybox >= 2)
 		{
